@@ -98,7 +98,7 @@ def main(retro=False, batch_size=256, parouts=0):
         learning_rate=2e-4,  # Higher learning rate since we're training from scratch
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
-        eval_accumulation_steps=200,
+        eval_accumulation_steps=100,
         weight_decay=0.01,
         save_total_limit=3,
         num_train_epochs=100,  # More epochs since we're training from scratch
