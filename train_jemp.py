@@ -296,8 +296,6 @@ def main(batch_size=32, num_epochs=10, lr=1e-4, size="m", train_encoder=False,
         lr_scheduler_type='constant',
         label_names=['tgt_input_ids', 'tgt_token_attention_mask', 'tgt_mol_attention_mask'],
         seed=42,
-        auto_find_batch_size=True,
-
         save_only_model=True,
     )
     trainer = Trainer(
