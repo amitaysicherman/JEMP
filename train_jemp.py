@@ -305,7 +305,7 @@ def main(batch_size=32, num_epochs=10, lr=1e-4, size="m", train_encoder=False,
         eval_dataset={'validation': val_dataset, "train": train_subset},
         compute_metrics=lambda x: compute_metrics(x),
     )
-    print(trainer.evaluate())
+    # print(trainer.evaluate())
     trainer.train()
 
 
