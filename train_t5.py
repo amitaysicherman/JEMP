@@ -93,7 +93,7 @@ def main(retro=False, batch_size=256, parouts=0):
     # Training arguments
     name_suffix = "retro" if retro else "forward"
     training_args = TrainingArguments(
-        output_dir=f"./res_{name_suffix}",
+        output_dir=f"./res/{name_suffix}",
         evaluation_strategy="steps",
         learning_rate=2e-4,  # Higher learning rate since we're training from scratch
         per_device_train_batch_size=batch_size,
@@ -105,7 +105,7 @@ def main(retro=False, batch_size=256, parouts=0):
         logging_steps=500,
         save_steps=2500,
         warmup_steps=2000,
-        logging_dir=f"./logs_{name_suffix}",
+        logging_dir=f"./logs/{name_suffix}",
         lr_scheduler_type="constant",
         load_best_model_at_end=True,
         eval_steps=2500,

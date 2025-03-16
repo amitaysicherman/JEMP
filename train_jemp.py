@@ -274,9 +274,9 @@ def main(batch_size=32, num_epochs=10, lr=1e-4, size="m", train_encoder=False,
     if retro:
         output_suf += "_retro"
 
-    os.makedirs(f"results/{output_suf}", exist_ok=True)
+    os.makedirs(f"res/{output_suf}", exist_ok=True)
     train_args = TrainingArguments(
-        output_dir=f"results/{output_suf}",
+        output_dir=f"res/{output_suf}",
         num_train_epochs=num_epochs,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
