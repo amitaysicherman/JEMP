@@ -324,7 +324,7 @@ if __name__ == "__main__":
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--parouts", type=int, default=0)
     parser.add_argument("--parouts_context", type=int, default=1)
-    parser.add_argument("--retro", type=int, default=1)
+    parser.add_argument("--retro", type=int, default=0)
 
     args = parser.parse_args()
     print("Arguments:")
