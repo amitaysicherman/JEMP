@@ -10,7 +10,7 @@ from decoder.main import create_model
 from transformers import AutoModel
 import numpy as np
 
-DEBUG = True
+DEBUG = False
 if torch.cuda.is_available():
     device = torch.device("cuda")
 elif torch.mps.is_available():
@@ -271,15 +271,17 @@ def main(batch_size=32, num_epochs=10, lr=1e-4, size="m", train_encoder=False,
         output_suf += "_parouts"
         if parouts_context:
             output_suf += "_context"
+    if retro:
+        output_suf += "_retro"
 
-    os.makedirs(f"res_auto_mvm_retro/{output_suf}", exist_ok=True)
+    os.makedirs(f"results/{output_suf}", exist_ok=True)
     train_args = TrainingArguments(
-        output_dir=f"res_auto_mvm_retro/{output_suf}",
+        output_dir=f"results/{output_suf}",
         num_train_epochs=num_epochs,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
         eval_accumulation_steps=eval_accumulation_steps,
-        logging_dir=f"logs_auto_mvm_retro/{output_suf}",
+        logging_dir=f"logs/{output_suf}",
         logging_steps=500,
         save_steps=2500,
         evaluation_strategy="steps",

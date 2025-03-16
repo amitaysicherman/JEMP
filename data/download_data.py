@@ -20,17 +20,17 @@ ALL_DATASETS = {
     "pubchem": DataSource(
         url="https://ftp.ncbi.nlm.nih.gov/pubchem/Compound/Extras/CID-SMILES.gz",
         file_name="CID-SMILES.gz",
-        base_dir="pubchem",
+        base_dir="data/pubchem",
     ),
     "USPTO": DataSource(
         url="https://az.app.box.com/index.php?rm=box_download_shared_file&shared_name=7eci3nd9vy0xplqniitpk02rbg9q2zcq&file_id=f_854847813119",
         file_name="data.pickle",
-        base_dir="USPTO",
+        base_dir="data/USPTO",
     ),
     "PaRoutes": DataSource(
         url="https://zenodo.org/record/7341155/files/all_loaded_routes.json.gz?download=1",
         file_name="all_loaded_routes.json.gz",
-        base_dir="PaRoutes",
+        base_dir="data/PaRoutes",
     )
 }
 
