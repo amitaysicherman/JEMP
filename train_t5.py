@@ -111,7 +111,7 @@ def main(retro=False, batch_size=256, parouts=0):
         eval_steps=1000,
         metric_for_best_model="eval_validation_token_accuracy",
         save_only_model=True,
-        auto_find_batch_size=True,
+        # auto_find_batch_size=True,
         save_safetensors=False,
 
 
@@ -127,8 +127,8 @@ def main(retro=False, batch_size=256, parouts=0):
         data_collator=lambda batch: collate_fn(batch, tokenizer)
 
     )
-    score = trainer.evaluate()
-    print(score)
+    # score = trainer.evaluate()
+    # print(score)
 
     # Train the model
     trainer.train(resume_from_checkpoint=False)

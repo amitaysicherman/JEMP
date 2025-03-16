@@ -313,7 +313,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--batch_size", type=int, default=2048)
+    parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--num_epochs", type=int, default=100)
     parser.add_argument("--eval_accumulation_steps", type=float, default=300)
     parser.add_argument("--lr", type=float, default=0.0001)
