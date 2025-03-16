@@ -14,7 +14,7 @@ then
     python train_jemp.py
 elif [ $split_index -eq 1 ]
 then
-    python train_jemp.py --retro
+    python train_jemp.py --retro 1
 elif [ $split_index -eq 2 ]
 then
     python train_t5.py
