@@ -43,8 +43,10 @@ class SmilesPreprocessor:
             return ""
         return smiles
 
-    def multismilts_format_filter(self, milti_smiles):
+    def multismilts_format_filter(self, milti_smiles, is_tgt=False):
         smiles = [self.format_filter(s) for s in milti_smiles.split(".")]
+        if is_tgt and len(smiles) > 1:
+            return ""
         if len(smiles) > self.max_mols:
             return ""
         if "" in smiles:
@@ -83,7 +85,7 @@ class SmilesPreprocessor:
                         for _, row in pbar:
                             s, t, c = row['reactants_mol'], row['products_mol'], row['reagents_mol']
                             s = self.multismilts_format_filter(self.format_mol(s))
-                            t = self.multismilts_format_filter(self.format_mol(t))
+                            t = self.multismilts_format_filter(self.format_mol(t), is_tgt=True)
                             if c is not None:
                                 c = self.multismilts_format_filter(self.format_mol(c))
                                 if c == "":
