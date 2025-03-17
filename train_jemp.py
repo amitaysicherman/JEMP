@@ -9,6 +9,7 @@ from transformers import BertGenerationDecoder, BertGenerationConfig, BertGenera
 from decoder.main import create_model
 from transformers import AutoModel
 import numpy as np
+from utils import load_state_dict_from_last_cp
 
 DEBUG = False
 if torch.cuda.is_available():
@@ -219,13 +220,9 @@ def main(batch_size=32, num_epochs=10, lr=1e-4, size="m", train_encoder=False,
     model = MVM(config_enc=encoder_config, config_dec=decoder_config, encoder=encoder, decoder=decoder,
                 is_trainable_encoder=train_encoder)
 
-    # Initialize MVM model with encoder and decoder
-    if cp is not None:
-        model.load_state_dict(torch.load(cp, map_location=device), strict=True)
 
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     non_trainable_params = sum(p.numel() for p in model.parameters() if not p.requires_grad)
-    total_params = trainable_params + non_trainable_params
     print(f"MODEL: {model.__class__.__name__}")
     print(f"Trainable parameters: {trainable_params:,}")
     print(f"Non-trainable parameters: {non_trainable_params:,}")
@@ -247,9 +244,18 @@ def main(batch_size=32, num_epochs=10, lr=1e-4, size="m", train_encoder=False,
     if retro:
         output_suf += "_retro"
 
-    os.makedirs(f"res/{output_suf}", exist_ok=True)
+    res_dir = f"res/{output_suf}"
+    os.makedirs(res_dir, exist_ok=True)
+    if cp is not None:
+        model.load_state_dict(torch.load(cp, map_location=device), strict=True)
+    else:
+        state_dict = load_state_dict_from_last_cp(res_dir)
+        if state_dict is not None:
+            model.load_state_dict(state_dict, strict=True)
+            print("Loaded model from last checkpoint")
+
     train_args = TrainingArguments(
-        output_dir=f"res/{output_suf}",
+        output_dir=res_dir,
         num_train_epochs=num_epochs,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,

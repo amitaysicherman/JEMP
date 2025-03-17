@@ -4,7 +4,8 @@ from transformers import T5Config, T5ForConditionalGeneration, Trainer, Training
 import numpy as np
 from transformers import AutoTokenizer
 import random
-
+import os
+from utils import load_state_dict_from_last_cp
 
 class TranslationDataset(Dataset):
     def __init__(self, split, is_retro=False, parouts_context=1, max_len=5, max_mol_len=75, base_dir="USPTO"):
@@ -91,9 +92,17 @@ def main(retro=False, batch_size=256, parouts=0):
     train_subset = torch.utils.data.Subset(train_dataset, train_subset_random_indices)
 
     # Training arguments
-    name_suffix = "retro" if retro else "forward"
+    output_suf = "retro" if retro else "forward"
+    res_dir = f"res/{output_suf}"
+    os.makedirs(res_dir, exist_ok=True)
+    state_dict = load_state_dict_from_last_cp(res_dir)
+    if state_dict is not None:
+        model.load_state_dict(state_dict, strict=True)
+        print("Loaded model from last checkpoint")
+
+
     training_args = TrainingArguments(
-        output_dir=f"./res/{name_suffix}",
+        output_dir=res_dir,
         evaluation_strategy="steps",
         learning_rate=2e-4,  # Higher learning rate since we're training from scratch
         per_device_train_batch_size=batch_size,
@@ -105,7 +114,7 @@ def main(retro=False, batch_size=256, parouts=0):
         logging_steps=500,
         save_steps=2500,
         warmup_steps=2000,
-        logging_dir=f"./logs/{name_suffix}",
+        logging_dir=f"./logs/{output_suf}",
         lr_scheduler_type="constant",
         load_best_model_at_end=True,
         eval_steps=2500,
