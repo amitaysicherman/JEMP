@@ -66,22 +66,22 @@ class ReactionMolsDataset(Dataset):
         self.empty = {"input_ids": torch.tensor([self.tokenizer.pad_token_id] * self.max_mol_len),
                       "attention_mask": torch.tensor([0] * self.max_mol_len)}
 
-    def preprocess_line(self, line):
+    def preprocess_line(self, line, max_len=5):
         if line == "":
             return {
-                'input_ids': torch.zeros(self.max_len, self.max_mol_len,
+                'input_ids': torch.zeros(max_len, self.max_mol_len,
                                          dtype=torch.long) + self.tokenizer.pad_token_id,
-                'token_attention_mask': torch.zeros(self.max_len, self.max_mol_len, dtype=torch.long),
-                'mol_attention_mask': torch.zeros(self.max_len, dtype=torch.long)
+                'token_attention_mask': torch.zeros(max_len, self.max_mol_len, dtype=torch.long),
+                'mol_attention_mask': torch.zeros(max_len, dtype=torch.long)
             }
         mols = line.strip().split(".")
         tokens = [self.tokenizer(m, padding="max_length", truncation=True, max_length=self.max_mol_len,
                                  return_tensors="pt") for m in mols]
         tokens = [{k: v.squeeze(0) for k, v in t.items()} for t in tokens]
         num_mols = len(tokens)
-        attention_mask = torch.zeros(self.max_len, dtype=torch.long)
+        attention_mask = torch.zeros(max_len, dtype=torch.long)
         attention_mask[:num_mols] = 1
-        while len(tokens) < self.max_len:
+        while len(tokens) < max_len:
             tokens.append({k: v.clone() for k, v in self.empty.items()})
         input_ids = torch.stack([t['input_ids'].squeeze(0) for t in tokens])
         token_attention_mask = torch.stack([t['attention_mask'].squeeze(0) for t in tokens])
@@ -94,11 +94,10 @@ class ReactionMolsDataset(Dataset):
     def __getitem__(self, idx):
 
         src, tgt = self.src[idx], self.tgt[idx]
-        src_tokens = self.preprocess_line(src)
-        tgt_tokens = self.preprocess_line(tgt)
+        src_tokens = self.preprocess_line(src, max_len=self.max_len)
+        tgt_tokens = self.preprocess_line(tgt, max_len=1)
         if self.is_retro:
             src_tokens, tgt_tokens = tgt_tokens, src_tokens
-
 
         return {
             "src_input_ids": src_tokens['input_ids'],
@@ -153,7 +152,7 @@ class MVM(nn.Module):
         bs, seq_len, _ = bert_decoder_output.size()
         labels = tgt_input_ids.view(bs * seq_len, -1).clone()
         labels[tgt_token_attention_mask.view(bs * seq_len, -1) == 0] = -100
-        output= self.decoder(
+        output = self.decoder(
             input_ids=tgt_input_ids.view(bs * seq_len, -1),
             attention_mask=tgt_token_attention_mask.view(bs * seq_len, -1),
             encoder_outputs=bert_decoder_output.view(bs * seq_len, -1),
@@ -187,10 +186,12 @@ def main(batch_size=32, num_epochs=10, lr=1e-4, size="m", train_encoder=False,
          train_decoder=False, cp=None, dropout=DROPOUT, parouts=False, parouts_context=True,
          eval_accumulation_steps=300, retro=True):
     base_dir = "USPTO" if not parouts else "PaRoutes"
-    train_dataset = ReactionMolsDataset(split="train", parouts_context=parouts_context, base_dir=base_dir, is_retro=retro)
+    train_dataset = ReactionMolsDataset(split="train", parouts_context=parouts_context, base_dir=base_dir,
+                                        is_retro=retro)
     val_dataset = ReactionMolsDataset(split="valid", parouts_context=parouts_context, base_dir=base_dir, is_retro=retro)
     if DEBUG:
-        val_dataset = ReactionMolsDataset(split="train", parouts_context=parouts_context, base_dir=base_dir, is_retro=retro)
+        val_dataset = ReactionMolsDataset(split="train", parouts_context=parouts_context, base_dir=base_dir,
+                                          is_retro=retro)
     train_subset_random_indices = random.sample(range(len(train_dataset)), len(val_dataset))
     train_subset = torch.utils.data.Subset(train_dataset, train_subset_random_indices)
     encoder_config, decoder_config = size_to_configs(size, 768, train_dataset.tokenizer, dropout=dropout)
