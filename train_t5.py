@@ -7,7 +7,7 @@ import random
 
 
 class TranslationDataset(Dataset):
-    def __init__(self, split, is_retro=False, parouts_context=1, max_len=10, max_mol_len=75, base_dir="USPTO"):
+    def __init__(self, split, is_retro=False, parouts_context=1, max_len=5, max_mol_len=75, base_dir="USPTO"):
         self.max_len = 10
         self.max_mol_len = 75
         self.max_len = max_len
@@ -16,13 +16,13 @@ class TranslationDataset(Dataset):
             self.src = f.read().splitlines()
         with open(f"data/{base_dir}/{split}-tgt.txt") as f:
             self.tgt = f.read().splitlines()
-        with open(f"data/{base_dir}/{split}-cont.txt") as f:
-            self.cont = f.read().splitlines()
+        # with open(f"data/{base_dir}/{split}-cont.txt") as f:
+        #     self.cont = f.read().splitlines()
         if is_retro:
             self.src, self.tgt = self.tgt, self.src
 
-        if (base_dir == "USPTO" and retro == 0) or (base_dir == "PaRoutes" and retro == 1 and parouts_context == 1):
-            self.src = [s + "." + c for s, c in zip(self.src, self.cont)]
+        # if (base_dir == "USPTO" and retro == 0) or (base_dir == "PaRoutes" and retro == 1 and parouts_context == 1):
+        #     self.src = [s + "." + c for s, c in zip(self.src, self.cont)]
 
     def __len__(self):
         return len(self.src)

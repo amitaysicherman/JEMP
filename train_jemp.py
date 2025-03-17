@@ -52,8 +52,6 @@ class ReactionMolsDataset(Dataset):
             self.src = f.read().splitlines()
         with open(f"data/{base_dir}/{split}-tgt.txt") as f:
             self.tgt = f.read().splitlines()
-        with open(f"data/{base_dir}/{split}-cont.txt") as f:
-            self.cont = f.read().splitlines()
 
         self.is_retro = is_retro
         self.is_uspto = base_dir == "USPTO"
@@ -62,7 +60,6 @@ class ReactionMolsDataset(Dataset):
         if DEBUG:
             self.src = self.src[:10]
             self.tgt = self.tgt[:10]
-            self.cont = self.cont[:10]
 
         self.tokenizer = AutoTokenizer.from_pretrained("ibm/MoLFormer-XL-both-10pct", trust_remote_code=True)
 
@@ -96,37 +93,12 @@ class ReactionMolsDataset(Dataset):
 
     def __getitem__(self, idx):
 
-        src, tgt, cont = self.src[idx], self.tgt[idx], self.cont[idx]
+        src, tgt = self.src[idx], self.tgt[idx]
         src_tokens = self.preprocess_line(src)
         tgt_tokens = self.preprocess_line(tgt)
-        cont_tokens = self.preprocess_line(cont)
-        if self.is_uspto:
-
-            if self.is_retro:
-                src_tokens, tgt_tokens = tgt_tokens, src_tokens
-            else:
-                src_tokens = {
-                    'input_ids': torch.cat((src_tokens['input_ids'], cont_tokens['input_ids']), dim=0),
-                    'token_attention_mask': torch.cat(
-                        (src_tokens['token_attention_mask'], cont_tokens['token_attention_mask']),
-                        dim=0),
-                    'mol_attention_mask': torch.cat(
-                        (src_tokens['mol_attention_mask'], cont_tokens['mol_attention_mask']),
-                        dim=0)
-                }
-        else:
-            assert self.is_retro
+        if self.is_retro:
             src_tokens, tgt_tokens = tgt_tokens, src_tokens
-            if self.parouts_context:
-                src_tokens = {
-                    'input_ids': torch.cat((src_tokens['input_ids'], cont_tokens['input_ids']), dim=0),
-                    'token_attention_mask': torch.cat(
-                        (src_tokens['token_attention_mask'], cont_tokens['token_attention_mask']),
-                        dim=0),
-                    'mol_attention_mask': torch.cat(
-                        (src_tokens['mol_attention_mask'], cont_tokens['mol_attention_mask']),
-                        dim=0)
-                }
+
 
         return {
             "src_input_ids": src_tokens['input_ids'],
