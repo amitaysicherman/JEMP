@@ -10,6 +10,7 @@ from transformers import (
 from torch.utils.data import Dataset as TorchDataset
 from os.path import join as pjoin
 import numpy as np
+import torch
 
 
 def load_file(file_path):
@@ -111,6 +112,9 @@ def main(args):
     print("Preparing dataset...")
     train_dataset = SrcTgtDataset(src_train, tgt_train, tokenizer, max_length=args.max_length)
     test_dataset = SrcTgtDataset(src_test, tgt_test, tokenizer, max_length=args.max_length)
+
+    train_small_indices = np.random.choice(len(train_dataset), len(test_dataset), replace=False)
+    train_small_dataset = torch.utils.data.Subset(train_dataset, train_small_indices)
     config = T5Config(
         vocab_size=len(tokenizer.vocab),
         n_positions=args.max_length,
@@ -144,6 +148,7 @@ def main(args):
         save_strategy="steps",
         save_steps=5_000,
         load_best_model_at_end=True,
+        metric_for_best_model="eval_test_token_accuracy",
         # label_names=["labels"],
     )
 
@@ -152,7 +157,7 @@ def main(args):
         model=model,
         args=training_args,
         train_dataset=train_dataset,
-        eval_dataset=test_dataset,
+        eval_dataset={"test": test_dataset, "train": train_small_dataset},
         compute_metrics=compute_metrics
     )
     print(trainer.evaluate())
