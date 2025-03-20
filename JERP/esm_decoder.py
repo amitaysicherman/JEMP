@@ -74,7 +74,7 @@ class ProteinEmbDecoder(PreTrainedModel):
         self.decoder = T5Stack(config, embed_tokens)
         self.lm_head = nn.Linear(config.d_model, config.vocab_size, bias=False)
 
-    def forward(self, input_ids, attention_mask, labels, encoder_outputs):
+    def forward(self, input_ids, attention_mask, labels):
         with torch.no_grad():
             outputs = self.esm(input_ids=input_ids, attention_mask=attention_mask)
         encoder_outputs = outputs.last_hidden_state.detach().cpu().mean(axis=1)
