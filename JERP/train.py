@@ -160,7 +160,6 @@ def main(args):
         eval_dataset={"test": test_dataset, "train": train_small_dataset},
         compute_metrics=compute_metrics
     )
-    print(trainer.evaluate())
     # Train model
     print("Training model...")
     trainer.train()
