@@ -10,8 +10,8 @@ from torch.nn import functional as F
 import torch
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-if torch.mps.is_available():
-    device = torch.device("mps")
+# if torch.mps.is_available():
+#     device = torch.device("mps")
 
 
 def _shift_right(input_ids, decoder_start_token_id, pad_token_id):
