@@ -46,7 +46,7 @@ class FASTADataset(Dataset):
         with torch.no_grad():
             tokens = {k: v.to(device) for k, v in tokens.items()}
             outputs = self.esm(**tokens)
-        tokens["encoder_hidden_states"] = outputs.last_hidden_state.detach().cpu()  # .mean(axis=-1)
+        tokens["encoder_hidden_states"] = outputs.last_hidden_state.detach().cpu().mean(axis=-1)
 
         print(tokens["encoder_hidden_states"].shape)
         labels = tokens["input_ids"].clone()
@@ -93,7 +93,7 @@ class ProteinEmbDecoder(PreTrainedModel):
 
 
 def create_model(debug=False):
-    tokenizer = AutoTokenizer.from_pretrained("facebook/esm2_t36_3B_UR50D", trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained("facebook/esm2_t30_150M_UR50D", trust_remote_code=True)
     if debug:
         config = T5Config(
             vocab_size=len(tokenizer),
