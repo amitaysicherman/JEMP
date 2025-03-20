@@ -29,7 +29,7 @@ def load_files(base_dir="data/Reactzyme/data"):
 
 
 class SrcTgtDataset(TorchDataset):
-    def __init__(self, src_texts, tgt_texts, tokenizer, max_length=1024):
+    def __init__(self, src_texts, tgt_texts, tokenizer, max_length=512):
         self.src_texts = src_texts
         self.tgt_texts = tgt_texts
         self.tokenizer = tokenizer
@@ -99,6 +99,8 @@ def compute_metrics(eval_preds):
 def main(args):
     print("Loading text files...")
     src_train, tgt_train, src_test, tgt_test = load_files()
+    if args.debug:
+        src_train, tgt_train, src_test, tgt_test = src_train[:2], tgt_train[:2], src_test[:2], tgt_test[:2]
     assert len(src_train) == len(tgt_train)
     assert len(src_test) == len(tgt_test)
     # Create output directory if it doesn't exist
@@ -114,6 +116,8 @@ def main(args):
 
     train_small_indices = np.random.choice(len(train_dataset), len(test_dataset), replace=False)
     train_small_dataset = torch.utils.data.Subset(train_dataset, train_small_indices)
+
+
     config = T5Config(
         vocab_size=len(tokenizer.vocab),
         n_positions=args.max_length,
@@ -128,8 +132,17 @@ def main(args):
         is_encoder_decoder=True,
         bos_token_id=tokenizer.bos_token_id,
     )
+    if args.debug:
+        config.d_model = 64
+        config.d_ff = 256
+        config.num_heads = 2
+        config.num_layers = 2
 
     model = T5ForConditionalGeneration(config)
+    print("Model created!")
+    print(model)
+    print(f"Model parameters:{model.num_parameters():,}")
+
     # Define training arguments
     training_args = TrainingArguments(
         output_dir=f"{args.output_dir}/model",
@@ -143,12 +156,14 @@ def main(args):
         num_train_epochs=args.epochs,
         fp16=args.fp16,
         logging_dir=f"{args.output_dir}/logs",
-        logging_steps=100,
-        eval_steps=1_000,
+        logging_steps=args.log_steps,
+        eval_steps=args.eval_steps,
         save_strategy="steps",
-        save_steps=5_000,
+        save_steps=args.save_steps,
+        lr_scheduler_type="constant",
         load_best_model_at_end=True,
         metric_for_best_model="eval_test_token_accuracy",
+        report_to=[args.report_to],
         # label_names=["labels"],
     )
 
@@ -173,8 +188,23 @@ if __name__ == "__main__":
     parser.add_argument("--max_length", type=int, default=1024, help="Maximum sequence length")
     parser.add_argument("--batch_size", type=int, default=16, help="Training batch size")
     parser.add_argument("--learning_rate", type=float, default=0.0001, help="Learning rate")
+    parser.add_argument("--log_steps", type=int, default=500, help="Log training steps")
+    parser.add_argument("--eval_steps", type=int, default=1000, help="Evaluate every n steps")
+    parser.add_argument("--save_steps", type=int, default=5000, help="Save model every n steps")
+    parser.add_argument("--report_to", type=str, default="tensorboard", help="Report to tensorboard or wandb")
     parser.add_argument("--epochs", type=int, default=3, help="Number of training epochs")
     parser.add_argument("--fp16", action="store_true", help="Use mixed precision training")
+    parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+
+
 
     args = parser.parse_args()
+    if args.debug:
+        args.batch_size = 2
+        args.epochs = 10000
+        args.log_steps = 100
+        args.eval_steps = 100
+        args.save_steps = 50000000
+        args.report_to = "none"
+
     main(args)
