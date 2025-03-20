@@ -47,7 +47,7 @@ class FASTADataset(Dataset):
         with torch.no_grad():
             outputs = self.esm(input_ids=tokens["input_ids"].to(device),
                                attention_mask=tokens["attention_mask"].to(device))
-        tokens["encoder_outputs"] = outputs.last_hidden_state.mean(axis=1)
+        tokens["encoder_outputs"] = outputs.last_hidden_state.mean(axis=1).detach().cpu()
         tokens["input_ids"] = tokens["input_ids"].squeeze(0)
         tokens["attention_mask"] = tokens["attention_mask"].squeeze(0)
         labels = tokens["input_ids"].clone()
