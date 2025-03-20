@@ -41,7 +41,7 @@ class FASTADataset(Dataset):
 
     def __getitem__(self, idx):
         smile = self.fasta
-        tokens = self.tokenizer(smile, padding="max_length", truncation=True, max_length=1024, return_tensors="pt")
+        tokens = self.tokenizer(smile, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
         tokens = {k: v.squeeze(0) for k, v in tokens.items()}
         with torch.no_grad():
             tokens = {k: v.to(device) for k, v in tokens.items()}
