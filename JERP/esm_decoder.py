@@ -33,15 +33,23 @@ class FASTADataset(Dataset):
             for line in f:
                 self.fasta.append(line.strip())
         self.tokenizer = AutoTokenizer.from_pretrained("facebook/esm2_t30_150M_UR50D", trust_remote_code=True)
+        self.esm = AutoModel.from_pretrained("facebook/esm2_t30_150M_UR50D", trust_remote_code=True)
+        self.esm.eval().to(device)
+        for param in self.esm.parameters():
+            param.requires_grad = False
 
     def __len__(self):
         return len(self.fasta)
 
     def __getitem__(self, idx):
-        smile = self.fasta
+        smile = self.fasta[idx]
         tokens = self.tokenizer(smile, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
-        tokens = {k: v.squeeze(0) for k, v in tokens.items()}
-
+        with torch.no_grad():
+            outputs = self.esm(input_ids=tokens["input_ids"].to(device),
+                               attention_mask=tokens["attention_mask"].to(device))
+        tokens["encoder_outputs"] = outputs.last_hidden_state.mean(axis=1)
+        tokens["input_ids"] = tokens["input_ids"].squeeze(0)
+        tokens["attention_mask"] = tokens["attention_mask"].squeeze(0)
         labels = tokens["input_ids"].clone()
         labels[labels == self.tokenizer.pad_token_id] = -100
         tokens["labels"] = labels
@@ -74,12 +82,7 @@ class ProteinEmbDecoder(PreTrainedModel):
         self.decoder = T5Stack(config, embed_tokens)
         self.lm_head = nn.Linear(config.d_model, config.vocab_size, bias=False)
 
-    def forward(self, input_ids, attention_mask, labels):
-        with torch.no_grad():
-            outputs = esm(input_ids=input_ids, attention_mask=attention_mask)
-        encoder_outputs = outputs.last_hidden_state.detach().cpu().mean(axis=1)
-        print(encoder_outputs.shape)
-
+    def forward(self, input_ids, encoder_outputs, labels, **kwargs):
         decoder_input_ids = _shift_right(input_ids, self.config.decoder_start_token_id, self.config.pad_token_id)
         decoder_output = self.decoder(encoder_hidden_states=encoder_outputs, input_ids=decoder_input_ids)
         lm_logits = self.lm_head(decoder_output.last_hidden_state)
@@ -95,7 +98,7 @@ def create_model(debug=False):
     if debug:
         config = T5Config(
             vocab_size=len(tokenizer),
-            d_model=256,
+            d_model=640,
             d_ff=512,
             num_layers=4,
             is_encoder_decoder=False,
@@ -109,7 +112,7 @@ def create_model(debug=False):
     else:
         config = T5Config(
             vocab_size=len(tokenizer),
-            d_model=768,
+            d_model=640,
             d_ff=2048,
             is_encoder_decoder=False,
             is_decoder=True,
@@ -140,10 +143,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
-    esm = AutoModel.from_pretrained("facebook/esm2_t30_150M_UR50D", trust_remote_code=True)
-    esm.eval().to(device)
-    for param in esm.parameters():
-        param.requires_grad = False
 
     model, tokenizer = create_model(args.debug)
     train_dataset = FASTADataset(split="train")
@@ -180,7 +179,7 @@ if __name__ == "__main__":
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        compute_metrics=lambda x: compute_metrics,
+        compute_metrics=compute_metrics,
     )
     scores = trainer.evaluate()
     print(scores)
