@@ -30,7 +30,7 @@ class FASTADataset(Dataset):
         with open(data_file) as f:
             for line in f:
                 self.fasta.append(line.strip())
-        self.tokenizer = AutoTokenizer.from_pretrained("facebook/esm2_t36_3B_UR50D", trust_remote_code=True)
+        self.tokenizer = AutoTokenizer.from_pretrained("facebook/esm2_t30_150M_UR50D", trust_remote_code=True)
         self.esm = AutoModel.from_pretrained("facebook/esm2_t30_150M_UR50D", trust_remote_code=True)
         self.esm.eval().to(device)
         for param in self.esm.parameters():
@@ -156,8 +156,8 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         output_dir=output_dir,
         num_train_epochs=10 if not DEBUG else 10000,
-        per_device_train_batch_size=64 if not DEBUG else 2,
-        per_device_eval_batch_size=64 if not DEBUG else 2,
+        per_device_train_batch_size=16 if not DEBUG else 2,
+        per_device_eval_batch_size=16 if not DEBUG else 2,
         learning_rate=1e-4 if not DEBUG else 1e-3,
         logging_steps=1_000 if not DEBUG else 10,
         save_steps=5_000 if not DEBUG else 50000000,
