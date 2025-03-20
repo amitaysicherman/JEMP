@@ -76,7 +76,7 @@ class ProteinEmbDecoder(PreTrainedModel):
 
     def forward(self, input_ids, attention_mask, labels):
         with torch.no_grad():
-            outputs = self.esm(input_ids=input_ids, attention_mask=attention_mask)
+            outputs = esm(input_ids=input_ids, attention_mask=attention_mask)
         encoder_outputs = outputs.last_hidden_state.detach().cpu().mean(axis=1)
         print(encoder_outputs.shape)
 
