@@ -156,7 +156,7 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         output_dir=output_dir,
         num_train_epochs=10 if not DEBUG else 10000,
-        per_device_train_batch_size=256 if not DEBUG else 2,
+        per_device_train_batch_size=128 if not DEBUG else 2,
         per_device_eval_batch_size=256 if not DEBUG else 2,
         learning_rate=1e-4 if not DEBUG else 1e-3,
         logging_steps=1_000 if not DEBUG else 10,
@@ -181,7 +181,4 @@ if __name__ == "__main__":
         eval_dataset=eval_dataset,
         compute_metrics=compute_metrics,
     )
-    scores = trainer.evaluate()
-    print(scores)
-
     trainer.train()
