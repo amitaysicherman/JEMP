@@ -137,6 +137,7 @@ def main(args):
         learning_rate=args.learning_rate,
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=args.batch_size,
+        eval_accumulation_steps=15,
         weight_decay=0.01,
         save_total_limit=3,
         num_train_epochs=args.epochs,
