@@ -78,6 +78,7 @@ class ProteinEmbDecoder(PreTrainedModel):
 
     def forward(self, input_ids, encoder_outputs, labels, **kwargs):
         decoder_input_ids = _shift_right(input_ids, self.config.decoder_start_token_id, self.config.pad_token_id)
+        encoder_outputs = encoder_outputs.unsqueeze(1)  # add sequence length dimension
         decoder_output = self.decoder(encoder_hidden_states=encoder_outputs, input_ids=decoder_input_ids)
         lm_logits = self.lm_head(decoder_output.last_hidden_state)
         loss = F.cross_entropy(lm_logits.view(-1, lm_logits.size(-1)), labels.view(-1), ignore_index=-100)
