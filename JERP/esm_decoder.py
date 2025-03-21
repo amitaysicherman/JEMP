@@ -47,7 +47,6 @@ class FASTADataset(Dataset):
         labels = tokens["input_ids"].clone()
         labels[labels == self.tokenizer.pad_token_id] = -100
         tokens["labels"] = labels
-
         return tokens
 
 
@@ -151,7 +150,7 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         output_dir=output_dir,
         num_train_epochs=100 if not DEBUG else 10000,
-        per_device_train_batch_size=128 if not DEBUG else 2,
+        per_device_train_batch_size=16 if not DEBUG else 2,
         per_device_eval_batch_size=256 if not DEBUG else 2,
         learning_rate=1e-4 if not DEBUG else 1e-3,
         logging_steps=1_000 if not DEBUG else 10,
