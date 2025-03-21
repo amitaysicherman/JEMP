@@ -28,28 +28,22 @@ class FASTADataset(Dataset):
     def __init__(self, split="train"):
         base_dir = "data/Reactzyme/data"
         data_file = pjoin(base_dir, f"{split}_enzyme.txt")
-        self.fasta = []
+        embed_file = pjoin(base_dir, f"{split}_enzyme.np")
         with open(data_file) as f:
-            for line in f:
-                self.fasta.append(line.strip())
+            self.fasta = f.read().splitlines()
+        self.embeddings = np.load(embed_file)
+        assert len(self.fasta) == len(self.embeddings)
         self.tokenizer = AutoTokenizer.from_pretrained("facebook/esm2_t30_150M_UR50D", trust_remote_code=True)
-        self.esm = AutoModel.from_pretrained("facebook/esm2_t30_150M_UR50D", trust_remote_code=True)
-        self.esm.eval().to(device)
-        for param in self.esm.parameters():
-            param.requires_grad = False
 
     def __len__(self):
         return len(self.fasta)
 
     def __getitem__(self, idx):
         smile = self.fasta[idx]
-        tokens = self.tokenizer(smile, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
-        with torch.no_grad():
-            outputs = self.esm(input_ids=tokens["input_ids"].to(device),
-                               attention_mask=tokens["attention_mask"].to(device))
-        tokens["encoder_outputs"] = outputs.last_hidden_state.mean(axis=1).detach().cpu()
-        tokens["input_ids"] = tokens["input_ids"].squeeze(0)
-        tokens["attention_mask"] = tokens["attention_mask"].squeeze(0)
+        embedding = self.embeddings[idx]
+        tokens = tokenizer(smile, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
+        tokens = {k: v.squeeze(0) for k, v in tokens.items()}
+        tokens["encoder_outputs"] = torch.from_numpy(embedding)
         labels = tokens["input_ids"].clone()
         labels[labels == self.tokenizer.pad_token_id] = -100
         tokens["labels"] = labels
