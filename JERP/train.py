@@ -117,7 +117,6 @@ def main(args):
     train_small_indices = np.random.choice(len(train_dataset), len(test_dataset), replace=False)
     train_small_dataset = torch.utils.data.Subset(train_dataset, train_small_indices)
 
-
     config = T5Config(
         vocab_size=len(tokenizer.vocab),
         n_positions=args.max_length,
@@ -195,8 +194,6 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=3, help="Number of training epochs")
     parser.add_argument("--fp16", action="store_true", help="Use mixed precision training")
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
-
-
 
     args = parser.parse_args()
     if args.debug:

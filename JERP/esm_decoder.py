@@ -28,7 +28,7 @@ class FASTADataset(Dataset):
     def __init__(self, split="train"):
         base_dir = "data/Reactzyme/data"
         data_file = pjoin(base_dir, f"{split}_enzyme.txt")
-        embed_file = pjoin(base_dir, f"{split}_enzyme.np")
+        embed_file = pjoin(base_dir, f"{split}_enzyme.npy")
         with open(data_file) as f:
             self.fasta = f.read().splitlines()
         self.embeddings = np.load(embed_file)
@@ -159,7 +159,7 @@ if __name__ == "__main__":
         eval_steps=5_000 if not DEBUG else 10,
         evaluation_strategy="steps",
         report_to=["tensorboard"] if not DEBUG else [],
-        lr_scheduler_type="linear",
+        lr_scheduler_type="constant",
         warmup_steps=5_000 if not DEBUG else 500,
         load_best_model_at_end=True,
         metric_for_best_model="token_accuracy",
