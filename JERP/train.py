@@ -191,7 +191,7 @@ if __name__ == "__main__":
     parser.add_argument("--eval_steps", type=int, default=1000, help="Evaluate every n steps")
     parser.add_argument("--save_steps", type=int, default=5000, help="Save model every n steps")
     parser.add_argument("--report_to", type=str, default="tensorboard", help="Report to tensorboard or wandb")
-    parser.add_argument("--epochs", type=int, default=3, help="Number of training epochs")
+    parser.add_argument("--epochs", type=int, default=100, help="Number of training epochs")
     parser.add_argument("--fp16", action="store_true", help="Use mixed precision training")
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
 
