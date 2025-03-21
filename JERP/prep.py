@@ -11,8 +11,8 @@ RDLogger.DisableLog('rdApp.*')
 enzyme_tokenizer = AutoTokenizer.from_pretrained("facebook/esm2_t36_3B_UR50D", trust_remote_code=True)
 reaction_tokenizer = AutoTokenizer.from_pretrained("ibm/MoLFormer-XL-both-10pct", trust_remote_code=True)
 
-max_enzyme_len = 1024
-max_reaction_len = 1024
+max_enzyme_len = 512
+max_reaction_len = 512
 
 
 def remove_stereo(smiles):
