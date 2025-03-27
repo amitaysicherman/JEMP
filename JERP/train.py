@@ -21,10 +21,10 @@ def load_file(file_path):
 
 def load_files(base_dir="data/Reactzyme/data"):
     """Load source and target text files"""
-    src_train = load_file(pjoin(base_dir, "train_enzyme.txt"))
-    tgt_train = load_file(pjoin(base_dir, "train_reaction.txt"))
-    src_test = load_file(pjoin(base_dir, "test_enzyme.txt"))
-    tgt_test = load_file(pjoin(base_dir, "test_reaction.txt"))
+    src_train = load_file(pjoin(base_dir, "train_reaction.txt"))
+    tgt_train = load_file(pjoin(base_dir, "train_enzyme.txt"))
+    src_test = load_file(pjoin(base_dir, "test_reaction.txt"))
+    tgt_test = load_file(pjoin(base_dir, "test_enzyme.txt"))
     return src_train, tgt_train, src_test, tgt_test
 
 
@@ -51,7 +51,6 @@ class SrcTgtDataset(TorchDataset):
         labels[labels == self.tokenizer.pad_token_id] = -100
         model_inputs["labels"] = labels
         model_inputs = {k: v.squeeze(0) for k, v in model_inputs.items()}
-
         return model_inputs
 
 
@@ -107,8 +106,11 @@ def main(args):
 
     tokenizer = AutoTokenizer.from_pretrained("facebook/esm2_t36_3B_UR50D", trust_remote_code=True)
     tgt_tokenizer = AutoTokenizer.from_pretrained("ibm/MoLFormer-XL-both-10pct", trust_remote_code=True)
-
-    tokenizer.vocab = {**tokenizer.get_vocab(), **tgt_tokenizer.get_vocab()}
+    n_tokens = len(tokenizer.get_vocab())
+    for key in tgt_tokenizer.vocab:
+        if key not in tokenizer.get_vocab():
+            tokenizer.add_tokens(key)
+    print(f"Number of tokens: {n_tokens} -> {len(tokenizer.get_vocab())}")
     # Prepare dataset
     print("Preparing dataset...")
     train_dataset = SrcTgtDataset(src_train, tgt_train, tokenizer, max_length=args.max_length)
@@ -118,7 +120,7 @@ def main(args):
     train_small_dataset = torch.utils.data.Subset(train_dataset, train_small_indices)
 
     config = T5Config(
-        vocab_size=len(tokenizer.vocab),
+        vocab_size=len(tokenizer.get_vocab()),
         n_positions=args.max_length,
         d_model=512,
         d_ff=2048,
@@ -203,5 +205,6 @@ if __name__ == "__main__":
         args.eval_steps = 100
         args.save_steps = 50000000
         args.report_to = "none"
+        args.learning_rate = 0.001
 
     main(args)
