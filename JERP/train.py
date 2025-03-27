@@ -186,8 +186,8 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train T5 model for translation")
     parser.add_argument("--output_dir", type=str, default="./translation_model", help="Output directory")
-    parser.add_argument("--max_length", type=int, default=1024, help="Maximum sequence length")
-    parser.add_argument("--batch_size", type=int, default=16, help="Training batch size")
+    parser.add_argument("--max_length", type=int, default=512, help="Maximum sequence length")
+    parser.add_argument("--batch_size", type=int, default=64, help="Training batch size")
     parser.add_argument("--learning_rate", type=float, default=0.0001, help="Learning rate")
     parser.add_argument("--log_steps", type=int, default=500, help="Log training steps")
     parser.add_argument("--eval_steps", type=int, default=1000, help="Evaluate every n steps")
