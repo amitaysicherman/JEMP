@@ -95,6 +95,7 @@ def compute_metrics(eval_preds):
         "sample_accuracy": sample_accuracy
     }
 
+
 def get_last_checkpoint(output_dir):
     all_cp_dirs = [d for d in os.listdir(output_dir) if d.startswith("checkpoint-")]
     if len(all_cp_dirs) == 0:
@@ -129,19 +130,38 @@ def main(args):
     train_small_indices = np.random.choice(len(train_dataset), len(test_dataset), replace=False)
     train_small_dataset = torch.utils.data.Subset(train_dataset, train_small_indices)
 
+    if args.size == "s":
+        d_model = 256
+        d_ff = 1024
+        num_heads = 4
+        num_layers = 4
+    elif args.size == "m":
+        d_model = 512
+        d_ff = 2048
+        num_heads = 8
+        num_layers = 6
+    elif args.size == "l":
+        d_model = 1024
+        d_ff = 4096
+        num_heads = 16
+        num_layers = 12
+    else:
+        raise ValueError(f"Unknown model size: {args.size}")
+
     config = T5Config(
         vocab_size=len(tokenizer.get_vocab()),
         n_positions=args.max_length,
-        d_model=512,
-        d_ff=2048,
-        num_heads=8,
-        num_layers=6,
         decoder_start_token_id=tokenizer.pad_token_id,
         sep_token_id=tokenizer.sep_token_id,
         eos_token_id=tokenizer.eos_token_id,
         pad_token_id=tokenizer.pad_token_id,
         is_encoder_decoder=True,
         bos_token_id=tokenizer.bos_token_id,
+        d_model=d_model,
+        d_ff=d_ff,
+        num_heads=num_heads,
+        num_layers=num_layers,
+
     )
     if args.debug:
         config.d_model = 64
@@ -206,9 +226,11 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=100, help="Number of training epochs")
     parser.add_argument("--fp16", action="store_true", help="Use mixed precision training")
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+    parser.add_argument("--size", type=str, default="m", help="Model size: s, m, l")
 
     args = parser.parse_args()
     if args.debug:
+        args.size = "s"
         args.batch_size = 2
         args.epochs = 10000
         args.log_steps = 100
