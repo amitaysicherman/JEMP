@@ -75,6 +75,7 @@ if __name__ == "__main__":
         is_encoder_decoder=True,
         bos_token_id=tokenizer.bos_token_id,
     )
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model = T5ForConditionalGeneration(config)
     cp_file = "JERP/model.safetensors"
@@ -93,7 +94,8 @@ if __name__ == "__main__":
     gt = "MSEIRLYVTTTMSEIRLYVTTTEAKAEEILDLLSALFGEEDFAIGTTEIDEKKDIWEASIYMMAEDEAEVQSRVEDALKASFPDARLEREVIPEIDWVVKSLEGLKPVRAGRFLVHGSHDRDKIRPGDIAIEIDAGQAFGTGHHGTTAGCLEVIDSVVRSRPVRNALDLGTGSGVLAIAVRKLRNIPVLATDIDPIATKVAAENVRRNGIASGIVTRTAPGFHSTAFSEHGPFDLIIANILARPLIRMAPKLATHLAPGGSVILSGILAGQRWKVIAAYSGARLRHVKTIWRNGWVTIHLDRP"
     labels = tokenizer(gt, return_tensors="pt", max_length=1024, padding="max_length", truncation=True)['input_ids']
     labels[labels == tokenizer.pad_token_id] = -100
-
+    prefix = {k: v.to(device) for k, v in prefix.items()}
+    labels = labels.to(device)
     output_predict = model(**prefix, labels=labels)['logits'].argmax(dim=-1)
     print(output_predict[0])
     print(f"Predicted: {tokenizer.decode(output_predict[0])}")

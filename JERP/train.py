@@ -12,6 +12,7 @@ import numpy as np
 import torch
 import os
 
+
 def load_file(file_path):
     """Load text file"""
     with open(file_path) as f:
@@ -162,7 +163,7 @@ def main(args):
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=args.batch_size,
         eval_accumulation_steps=30,
-        weight_decay=0.01,
+        # weight_decay=0.01,
         save_total_limit=3,
         num_train_epochs=args.epochs,
         fp16=args.fp16,
