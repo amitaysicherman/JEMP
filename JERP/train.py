@@ -266,7 +266,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.size == "l":
         args.batch_size = 16
-    elif args.size == "m":
+    else:
         args.batch_size = 64
     if args.debug:
         args.size = "s"
