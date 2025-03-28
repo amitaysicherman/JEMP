@@ -1,4 +1,6 @@
 import argparse
+from typing import Optional, Tuple, Union
+
 from transformers import (
     T5ForConditionalGeneration,
     T5Config,
@@ -11,6 +13,10 @@ from os.path import join as pjoin
 import numpy as np
 import torch
 import os
+
+from transformers.modeling_outputs import Seq2SeqLMOutput
+
+from JERP.trie import Trie, build_trie, build_mask_from_trie
 
 
 def load_file(file_path):
@@ -106,9 +112,31 @@ def get_last_checkpoint(output_dir):
     return last_cp_path
 
 
+class ModelWithTrie(T5ForConditionalGeneration):
+    def __init__(self, config: T5Config, trie: Trie):
+        super().__init__(config)
+        self.trie = trie
+
+    def forward(
+            self, *args, **kwargs
+    ):
+        # apply the super class forward method
+        outputs = super().forward(*args, **kwargs)
+        # get the logits
+        labels = kwargs.get("labels")
+        labels = torch.cat([labels.new_ones((labels.shape[0], 1)) * self.config.decoder_start_token_id, labels[:, :-1]],
+                           dim=1)
+        trie_mask = build_mask_from_trie(self.trie, labels, self.config.vocab_size)
+        # replace   zero with -inf
+        trie_mask = trie_mask.masked_fill(trie_mask == 0, float("-inf"))
+        outputs.logits = outputs.logits * trie_mask
+        return outputs
+
+
 def main(args):
     print("Loading text files...")
     src_train, tgt_train, src_test, tgt_test = load_files()
+
     if args.debug:
         src_train, tgt_train, src_test, tgt_test = src_train[:2], tgt_train[:2], src_test[:2], tgt_test[:2]
     assert len(src_train) == len(tgt_train)
@@ -124,6 +152,7 @@ def main(args):
     print(f"Number of tokens: {n_tokens} -> {len(tokenizer.get_vocab())}")
     # Prepare dataset
     print("Preparing dataset...")
+
     train_dataset = SrcTgtDataset(src_train, tgt_train, tokenizer, max_length=args.max_length)
     test_dataset = SrcTgtDataset(src_test, tgt_test, tokenizer, max_length=args.max_length)
 
@@ -168,13 +197,19 @@ def main(args):
         config.d_ff = 256
         config.num_heads = 2
         config.num_layers = 2
-
-    model = T5ForConditionalGeneration(config)
+    if args.trie:
+        trie = build_trie(tgt_train + tgt_test, tokenizer, tokenizer.pad_token_id)
+        model = ModelWithTrie(config, trie)
+    else:
+        model = T5ForConditionalGeneration(config)
     print("Model created!")
     print(model)
     print(f"Model parameters:{model.num_parameters():,}")
     output_dir = f"trans/model/{args.learning_rate}"
     log_dir = f"trans/logs/{args.learning_rate}"
+    if args.trie:
+        output_dir += "_trie"
+        log_dir += "_trie"
     # Define training arguments
     training_args = TrainingArguments(
         output_dir=output_dir,
@@ -227,6 +262,7 @@ if __name__ == "__main__":
     parser.add_argument("--fp16", action="store_true", help="Use mixed precision training")
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     parser.add_argument("--size", type=str, default="m", help="Model size: s, m, l")
+    parser.add_argument("--trie", action="store_true", help="Use trie for training")
     args = parser.parse_args()
     if args.size == "l":
         args.batch_size = 16
