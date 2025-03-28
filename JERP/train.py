@@ -210,6 +210,7 @@ def main(args):
     if args.trie:
         output_dir += "_trie"
         log_dir += "_trie"
+    print(args.batch_size)
     # Define training arguments
     training_args = TrainingArguments(
         output_dir=output_dir,
