@@ -227,8 +227,11 @@ if __name__ == "__main__":
     parser.add_argument("--fp16", action="store_true", help="Use mixed precision training")
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     parser.add_argument("--size", type=str, default="m", help="Model size: s, m, l")
-
     args = parser.parse_args()
+    if args.size == "l":
+        args.batch_size = 16
+    elif args.size == "m":
+        args.batch_size = 64
     if args.debug:
         args.size = "s"
         args.batch_size = 2
