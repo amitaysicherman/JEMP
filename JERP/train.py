@@ -10,7 +10,7 @@ from torch.utils.data import Dataset as TorchDataset
 from os.path import join as pjoin
 import numpy as np
 import torch
-
+import os
 
 def load_file(file_path):
     """Load text file"""
@@ -94,6 +94,15 @@ def compute_metrics(eval_preds):
         "sample_accuracy": sample_accuracy
     }
 
+def get_last_checkpoint(output_dir):
+    all_cp_dirs = [d for d in os.listdir(output_dir) if d.startswith("checkpoint-")]
+    if len(all_cp_dirs) == 0:
+        return None
+    all_cp_dirs.sort(key=lambda x: int(x.split("-")[1]), reverse=True)
+    last_cp_dir = all_cp_dirs[0]
+    last_cp_path = os.path.join(output_dir, last_cp_dir)
+    return last_cp_path
+
 
 def main(args):
     print("Loading text files...")
@@ -143,10 +152,11 @@ def main(args):
     print("Model created!")
     print(model)
     print(f"Model parameters:{model.num_parameters():,}")
-
+    output_dir = f"trans/model/{args.learning_rate}"
+    log_dir = f"trans/logs/{args.learning_rate}"
     # Define training arguments
     training_args = TrainingArguments(
-        output_dir=f"{args.output_dir}/model",
+        output_dir=output_dir,
         evaluation_strategy="steps",
         learning_rate=args.learning_rate,
         per_device_train_batch_size=args.batch_size,
@@ -156,7 +166,7 @@ def main(args):
         save_total_limit=3,
         num_train_epochs=args.epochs,
         fp16=args.fp16,
-        logging_dir=f"{args.output_dir}/logs",
+        logging_dir=log_dir,
         logging_steps=args.log_steps,
         eval_steps=args.eval_steps,
         save_strategy="steps",
@@ -178,14 +188,13 @@ def main(args):
     )
     # Train model
     print("Training model...")
-    trainer.train()
+    trainer.train(resume_from_checkpoint=get_last_checkpoint(output_dir))
 
     print("Training complete!")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train T5 model for translation")
-    parser.add_argument("--output_dir", type=str, default="./translation_model", help="Output directory")
     parser.add_argument("--max_length", type=int, default=512, help="Maximum sequence length")
     parser.add_argument("--batch_size", type=int, default=64, help="Training batch size")
     parser.add_argument("--learning_rate", type=float, default=0.0001, help="Learning rate")
