@@ -2,6 +2,7 @@ from tqdm import tqdm
 
 import torch
 
+
 class Trie:
     def __init__(self, tokens_lists, empty_token=0):
         self.root = {}
@@ -45,10 +46,11 @@ class Trie:
 def build_trie(word_list, tokenizer, decoder_start_token):
     tokens_list = []
     for word in word_list:
-        tokens = tokenizer.encode(word, add_special_tokens=False)
-        tokens = [decoder_start_token] + tokens + [tokenizer.eos_token_id]
+        tokens = tokenizer.encode(word, add_special_tokens=True)
+        tokens = [decoder_start_token] + tokens
         tokens_list.append(tokens)
     return Trie(tokens_list, empty_token=tokenizer.pad_token_id)
+
 
 def build_mask_from_trie(trie, sequences, vocab_size):
     """
@@ -68,10 +70,10 @@ def build_mask_from_trie(trie, sequences, vocab_size):
         current_node = trie.root
         for seq_idx in range(seq_length):
             token = int(sequences[batch_idx, seq_idx].item())
-            current_node = current_node[token]
-            for child_token in current_node.keys():
-                # Set valid next tokens to 1 in the mask
+            if token == -100:
+                break
+            for child_token in current_node[token]:
                 mask[batch_idx, seq_idx, child_token] = 1
+            current_node = current_node[token]
+
     return mask
-
-

@@ -13,6 +13,7 @@ from os.path import join as pjoin
 import numpy as np
 import torch
 import os
+from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 
 from transformers.modeling_outputs import Seq2SeqLMOutput
 
@@ -118,18 +119,26 @@ class ModelWithTrie(T5ForConditionalGeneration):
         self.trie = trie
 
     def forward(
-            self, *args, **kwargs
+            self, input_ids: Optional[torch.LongTensor] = None,
+            attention_mask: Optional[torch.FloatTensor] = None,
+            labels: Optional[torch.LongTensor] = None,
+            **kwargs
     ):
         # apply the super class forward method
-        outputs = super().forward(*args, **kwargs)
-        # get the logits
-        labels = kwargs.get("labels")
-        labels = torch.cat([labels.new_ones((labels.shape[0], 1)) * self.config.decoder_start_token_id, labels[:, :-1]],
+        outputs = super().forward(input_ids=input_ids, attention_mask=attention_mask, labels=labels, **kwargs)
+        decoder_input = torch.cat([labels.new_ones((labels.shape[0], 1)) * self.config.decoder_start_token_id, labels[:, :-1]],
                            dim=1)
-        trie_mask = build_mask_from_trie(self.trie, labels, self.config.vocab_size)
+        trie_mask = build_mask_from_trie(self.trie, decoder_input, self.config.vocab_size)
         # replace   zero with -inf
-        trie_mask = trie_mask.masked_fill(trie_mask == 0, float("-inf"))
-        outputs.logits = outputs.logits * trie_mask
+        trie_mask = trie_mask.masked_fill(trie_mask == 0, -1e6)
+        trie_mask = trie_mask.masked_fill(trie_mask == 1, 0)
+        trie_mask = trie_mask.to(outputs.logits.device)
+
+        outputs.logits = outputs.logits + trie_mask
+        loss_fct = CrossEntropyLoss(ignore_index=-100)
+        labels = labels.to(outputs.logits.device)
+        outputs.loss = loss_fct(outputs.logits.view(-1, outputs.logits.size(-1)), labels.view(-1))
+
         return outputs
 
 
@@ -210,7 +219,7 @@ def main(args):
     if args.trie:
         output_dir += "_trie"
         log_dir += "_trie"
-    print(args.batch_size,len(train_dataset), len(test_dataset))        
+    print(args.batch_size, len(train_dataset), len(test_dataset))
     # Define training arguments
     training_args = TrainingArguments(
         output_dir=output_dir,
