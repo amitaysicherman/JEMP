@@ -138,9 +138,19 @@ class ModelWithTrie(T5ForConditionalGeneration):
             return_dict: Optional[bool] = None,
     ):
         # apply the super class forward method
-        outputs = super().forward(input_ids=input_ids, attention_mask=attention_mask, labels=labels, **kwargs)
-        decoder_input = torch.cat([labels.new_ones((labels.shape[0], 1)) * self.config.decoder_start_token_id, labels[:, :-1]],
-                           dim=1)
+        outputs = super().forward(input_ids=input_ids, attention_mask=attention_mask,
+                                  decoder_input_ids=decoder_input_ids,
+                                  decoder_attention_mask=decoder_attention_mask, head_mask=head_mask,
+                                  decoder_head_mask=decoder_head_mask,
+                                  cross_attn_head_mask=cross_attn_head_mask, encoder_outputs=encoder_outputs,
+                                  past_key_values=past_key_values, inputs_embeds=inputs_embeds,
+                                  decoder_inputs_embeds=decoder_inputs_embeds, labels=labels, use_cache=use_cache,
+                                  output_attentions=output_attentions, output_hidden_states=output_hidden_states,
+                                  return_dict=return_dict)
+
+        decoder_input = torch.cat(
+            [labels.new_ones((labels.shape[0], 1)) * self.config.decoder_start_token_id, labels[:, :-1]],
+            dim=1)
         trie_mask = build_mask_from_trie(self.trie, decoder_input, self.config.vocab_size)
         # replace   zero with -inf
         trie_mask = trie_mask.masked_fill(trie_mask == 0, -1e6)
