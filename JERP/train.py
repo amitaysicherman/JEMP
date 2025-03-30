@@ -174,11 +174,12 @@ class ModelWithTrie(T5ForConditionalGeneration):
             [labels.new_ones((labels.shape[0], 1)) * self.config.decoder_start_token_id, labels[:, :-1]],
             dim=1)
         trie_mask = build_mask_from_trie(self.trie, decoder_input, self.config.vocab_size)
+        labels[trie_mask.sum(dim=-1) <= 1] = -100
+
         # replace   zero with -inf
         trie_mask = trie_mask.masked_fill(trie_mask == 0, -1e6)
         trie_mask = trie_mask.masked_fill(trie_mask == 1, 0)
         trie_mask = trie_mask.to(outputs.logits.device)
-        labels[trie_mask.sum(dim=-1) <= 1] = -100
         outputs.logits = outputs.logits + trie_mask
         loss_fct = CrossEntropyLoss(ignore_index=-100)
         labels = labels.to(outputs.logits.device)
