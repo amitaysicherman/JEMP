@@ -64,6 +64,7 @@ class SrcTgtDataset(TorchDataset):
 
 def compute_metrics(eval_preds):
     predictions, labels = eval_preds
+    print(predictions[0].shape, labels.shape)
     predictions = predictions[0].argmax(-1)
 
     # Create mask for non-padding tokens (-100 is the default ignore index)
@@ -156,7 +157,7 @@ class ModelWithTrie(T5ForConditionalGeneration):
         trie_mask = trie_mask.masked_fill(trie_mask == 0, -1e6)
         trie_mask = trie_mask.masked_fill(trie_mask == 1, 0)
         trie_mask = trie_mask.to(outputs.logits.device)
-
+        labels[trie_mask.sum(dim=1) <= 1] = -100
         outputs.logits = outputs.logits + trie_mask
         loss_fct = CrossEntropyLoss(ignore_index=-100)
         labels = labels.to(outputs.logits.device)
