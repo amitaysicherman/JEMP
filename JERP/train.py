@@ -27,14 +27,35 @@ def load_file(file_path):
     return texts
 
 
+# def filter_to_unique_tgt(src_train, tgt_train, src_test, tgt_test):
+#     src_already = set()
+#     src_train_unique = []
+#     tgt_train_unique = []
+#     src_test_unique = []
+#     tgt_test_unique = []
+#     for s, t in zip(src_train, tgt_train):
+#         if s not in src_already:
+#             src_already.add(s)
+#             src_train_unique.append(s)
+#             tgt_train_unique.append(t)
+#     for s, t in zip(src_test, tgt_test):
+#         if s not in src_already:
+#             src_already.add(s)
+#             src_test_unique.append(s)
+#             tgt_test_unique.append(t)
+#     return src_train_unique, tgt_train_unique, src_test_unique, tgt_test_unique
+
+
 def load_files(base_dir="data/Reactzyme/data"):
     """Load source and target text files"""
     src_train = load_file(pjoin(base_dir, "train_reaction.txt"))
     tgt_train = load_file(pjoin(base_dir, "train_enzyme.txt"))
     src_test = load_file(pjoin(base_dir, "test_reaction.txt"))
     tgt_test = load_file(pjoin(base_dir, "test_enzyme.txt"))
+    print(f"src_train: {len(src_train)}, tgt_train: {len(tgt_train)}, src_test: {len(src_test)}, tgt_test: {len(tgt_test)}")
+    # src_train, tgt_train, src_test, tgt_test = filter_to_unique_tgt(src_train, tgt_train, src_test, tgt_test)
+    # print(f"src_train: {len(src_train)}, tgt_train: {len(tgt_train)}, src_test: {len(src_test)}, tgt_test: {len(tgt_test)}")
     return src_train, tgt_train, src_test, tgt_test
-
 
 class SrcTgtDataset(TorchDataset):
     def __init__(self, src_texts, tgt_texts, tokenizer, max_length=512):
@@ -157,7 +178,7 @@ class ModelWithTrie(T5ForConditionalGeneration):
         trie_mask = trie_mask.masked_fill(trie_mask == 0, -1e6)
         trie_mask = trie_mask.masked_fill(trie_mask == 1, 0)
         trie_mask = trie_mask.to(outputs.logits.device)
-        labels[trie_mask.sum(dim=1) <= 1] = -100
+        labels[trie_mask.sum(dim=-1) <= 1] = -100
         outputs.logits = outputs.logits + trie_mask
         loss_fct = CrossEntropyLoss(ignore_index=-100)
         labels = labels.to(outputs.logits.device)
