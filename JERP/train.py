@@ -229,6 +229,13 @@ def main(args):
         d_ff = 4096
         num_heads = 16
         num_layers = 12
+    elif args.size == "xs":
+        d_model = 128
+        d_ff = 512
+        num_heads = 2
+        num_layers = 2
+
+
     else:
         raise ValueError(f"Unknown model size: {args.size}")
 
