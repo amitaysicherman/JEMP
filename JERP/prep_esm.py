@@ -6,13 +6,13 @@ from tqdm import tqdm
 batch_size = 10
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-tokenizer = AutoTokenizer.from_pretrained("facebook/esm2_t30_150M_UR50D", trust_remote_code=True)
-esm = AutoModel.from_pretrained("facebook/esm2_t30_150M_UR50D", trust_remote_code=True)
+tokenizer = AutoTokenizer.from_pretrained("facebook/esm2_t36_3B_UR50D", trust_remote_code=True)
+esm = AutoModel.from_pretrained("facebook/esm2_t36_3B_UR50D", trust_remote_code=True)
 esm.eval().to(device)
 for param in esm.parameters():
     param.requires_grad = False
 for split in ["train", "test"]:
-    base_dir = "data/Reactzyme/data"
+    base_dir = "data/CARE_datasets/hard"
     data_file = f"{base_dir}/{split}_enzyme.txt"
     output_file = f"{base_dir}/{split}_enzyme.np"
     embeddings = []
