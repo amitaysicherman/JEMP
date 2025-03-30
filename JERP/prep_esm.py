@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from tqdm import tqdm
 
-batch_size = 10
+batch_size = 1
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 tokenizer = AutoTokenizer.from_pretrained("facebook/esm2_t36_3B_UR50D", trust_remote_code=True)
