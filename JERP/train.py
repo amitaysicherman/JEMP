@@ -46,7 +46,7 @@ def load_file(file_path):
 #     return src_train_unique, tgt_train_unique, src_test_unique, tgt_test_unique
 
 
-def load_files(base_dir="data/CARE_datasets/hard"):
+def load_files(base_dir="data/CARE_datasets/easy"):
     """Load source and target text files"""
     src_train = load_file(pjoin(base_dir, "train_reaction.txt"))
     tgt_train = load_file(pjoin(base_dir, "train_enzyme.txt"))
